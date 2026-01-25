@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Cubo Builder</title>
+  <title>Cube Builder</title>
   <style>
     html, body { height: 100%; margin: 0; }
     canvas { display: block; }
@@ -56,11 +56,7 @@
 </head>
 <body>
   <div id="ui">
-    <div><b>Constructor de cubos</b></div>
-    <div class="hint">
-      Arrastrar: <b>rotar</b> · Rueda: <b>zoom</b> · Botón derecho: <b>pan</b><br/>
-      Click corto (sin arrastrar) según el modo:
-    </div>
+    <div><b>Constructor de cubs</b></div>
 
     <div class="row">
       <button id="btnPlace" class="mode-btn active">🟦 AFEGIR</button>
@@ -74,7 +70,7 @@
     </div>
 
     <div class="hint" id="modeHint">
-      Modo actual: <b>PONER</b> (click en cara o suelo)
+      ARA: <b>PONER</b>
     </div>
   </div>
 
@@ -179,8 +175,8 @@
       btnPlace.classList.toggle("active", mode === "place");
       btnErase.classList.toggle("active", mode === "erase");
       modeHint.innerHTML = mode === "place"
-        ? 'Modo actual: <b>PONER</b> (click en cara o suelo)'
-        : 'Modo actual: <b>BORRAR</b> (click en un cubo)';
+        ? 'ARA: <b>AFEGIR</b>'
+        : 'ARA: <b>BORRAR</b>';
     }
 
     btnPlace.addEventListener("click", () => setMode("place"));
@@ -300,5 +296,6 @@
 </body>
 </html>
  
+
 
 
