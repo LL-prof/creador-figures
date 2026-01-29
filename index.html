@@ -5,174 +5,195 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ejercicio</title>
     <style>
-      :root{
-        --bg:#f5f5f5;
-        --white:#ffffff;
-        --black:#1f1f1f;
-        --accent:#4aa3ff;
-        --shadow:0 8px 20px rgba(0,0,0,.08);
+      :root {
+        --bg: #f5f5f5;
+        --white: #ffffff;
+        --black: #1f1f1f;
+        --accent: #4aa3ff;
+        --shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
 
-        --sel:#facc15;   /* amarillo selección */
-        --ok:#22c55e;    /* verde */
-        --bad:#ef4444;   /* rojo */
-        --muted:#6b7280;
+        --sel: #facc15; /* amarillo */
+        --ok: #22c55e;  /* verde */
+        --bad: #ef4444; /* rojo */
+        --muted: #6b7280;
       }
-      *{box-sizing:border-box}
-      body{
-        margin:0; min-height:100vh;
-        display:grid; place-items:center;
-        padding:22px 16px;
-        background:var(--bg);
-        font-family:Arial, sans-serif;
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 22px 16px;
+        background: var(--bg);
+        font-family: Arial, sans-serif;
       }
-      .card{
-        width:min(920px,100%);
-        background:rgba(255,255,255,.72);
-        border-radius:22px;
-        padding:16px 18px 18px;
-        box-shadow:var(--shadow);
+
+      .card {
+        width: min(920px, 100%);
+        background: rgba(255, 255, 255, 0.72);
+        border-radius: 22px;
+        padding: 16px 18px 18px;
+        box-shadow: var(--shadow);
         backdrop-filter: blur(6px);
-        position:relative;
-        overflow:hidden;
+        position: relative;
+        overflow: hidden;
       }
 
-      /* Header */
-      .topbar{
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:12px;
-        margin-bottom:10px;
-      }
-      .title{
-        font-size:20px;
-        font-weight:900;
-        letter-spacing:.2px;
-        margin:0;
-        color:#111827;
-        user-select:none;
-      }
-      .score{
-        display:flex;
-        align-items:center;
-        gap:10px;
-        padding:8px 12px;
-        border-radius:16px;
-        background:#ffffff;
-        box-shadow:var(--shadow);
-        font-weight:900;
-        color:#111827;
-        user-select:none;
-      }
-      .score small{
-        font-weight:800;
-        color:var(--muted);
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
       }
 
-      /* Choices */
-      .choices{
-        display:grid;
-        grid-template-columns:repeat(4, minmax(70px,90px));
-        gap:16px 20px;
-        justify-content:center;
-        margin-top:8px;
-      }
-      .note-group{
-        display:grid;
-        gap:10px;
-        align-items:center;
-        justify-items:center;
-        padding:8px 6px;
-        border-radius:16px;
-      }
-      button.note{
-        border:3px solid transparent;
-        cursor:pointer;
-        width:82px; height:62px;
-        border-radius:18px;
-        box-shadow:var(--shadow);
-        transition:transform .15s ease, box-shadow .15s ease, border-color .12s ease, filter .12s ease;
-      }
-      button.note:focus-visible{
-        outline:3px solid var(--accent);
-        outline-offset:4px;
-      }
-      .white{background:var(--white)}
-      .black{background:var(--black)}
-      .selected{
-        border-color:var(--sel);
-        box-shadow:0 10px 24px rgba(0,0,0,.12), 0 0 0 5px rgba(250,204,21,.25);
-        transform:translateY(-2px);
+      .title {
+        font-size: 20px;
+        font-weight: 900;
+        margin: 0;
+        color: #111827;
+        user-select: none;
       }
 
-      /* Result borders after CHECK */
-      .result-ok{
-        border-color:var(--ok) !important;
-        box-shadow:0 10px 24px rgba(0,0,0,.12), 0 0 0 5px rgba(34,197,94,.22) !important;
-      }
-      .result-bad{
-        border-color:var(--bad) !important;
-        box-shadow:0 10px 24px rgba(0,0,0,.12), 0 0 0 5px rgba(239,68,68,.22) !important;
-      }
-
-      /* Controls */
-      .controls{
-        display:flex;
-        gap:12px;
-        justify-content:center;
-        align-items:center;
-        margin-top:16px;
-      }
-      .btn{
-        border:none;
-        cursor:pointer;
-        width:90px;
-        height:70px;
-        border-radius:22px;
-        box-shadow:var(--shadow);
-        font-size:30px;
-        font-weight:900;
-        transition:transform .1s ease, opacity .15s ease, filter .15s ease;
-        display:grid;
-        place-items:center;
-        user-select:none;
-      }
-      .btn:active{transform:scale(.98)}
-      .btn-primary{background:var(--accent); color:#fff;}
-      .btn-check{background:#111827; color:#fff;}
-      .btn-ghost{background:#fff; color:#111827;}
-
-      .btn[disabled]{
-        opacity:.28;
-        cursor:not-allowed;
-        filter:grayscale(.2);
+      .score {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        border-radius: 16px;
+        background: #ffffff;
+        box-shadow: var(--shadow);
+        font-weight: 900;
+        color: #111827;
+        user-select: none;
       }
 
-      /* Speaker overlay (solo aparece/desaparece) */
-      .speaker{
-        position:absolute;
-        inset:0;
-        display:grid;
-        place-items:center;
-        pointer-events:none;
-        opacity:0;
-        transition:opacity .15s ease;
+      .score small {
+        color: var(--muted);
+        font-weight: 900;
       }
-      .speaker.show{ opacity:1; }
-      .speaker .bubble{
-        width:120px;
-        height:120px;
-        border-radius:32px;
-        background:rgba(255,255,255,.85);
-        box-shadow:var(--shadow);
-        display:grid;
-        place-items:center;
+
+      .choices {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(70px, 90px));
+        gap: 16px 20px;
+        justify-content: center;
+        margin-top: 10px;
+      }
+
+      .note-group {
+        display: grid;
+        gap: 10px;
+        align-items: center;
+        justify-items: center;
+        padding: 8px 6px;
+        border-radius: 16px;
+      }
+
+      /* Bordes visibles */
+      button.note {
+        border: 5px solid transparent;
+        cursor: pointer;
+        width: 82px;
+        height: 62px;
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+      }
+
+      button.note:focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: 4px;
+      }
+
+      .white { background: var(--white); }
+      .black { background: var(--black); }
+
+      /* Amarillo selección */
+      .selected {
+        border-color: var(--sel);
+        box-shadow:
+          0 10px 24px rgba(0, 0, 0, 0.12),
+          0 0 0 7px rgba(250, 204, 21, 0.30);
+        transform: translateY(-2px);
+      }
+
+      /* Resultado tras CHECK */
+      .result-ok {
+        border-color: var(--ok) !important;
+        box-shadow:
+          0 10px 24px rgba(0, 0, 0, 0.12),
+          0 0 0 7px rgba(34, 197, 94, 0.24) !important;
+      }
+
+      .result-bad {
+        border-color: var(--bad) !important;
+        box-shadow:
+          0 10px 24px rgba(0, 0, 0, 0.12),
+          0 0 0 7px rgba(239, 68, 68, 0.24) !important;
+      }
+
+      .controls {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        align-items: center;
+        margin-top: 16px;
+      }
+
+      .btn {
+        border: none;
+        cursor: pointer;
+        width: 90px;
+        height: 70px;
+        border-radius: 22px;
+        box-shadow: var(--shadow);
+        font-size: 30px;
+        font-weight: 900;
+        transition: transform 0.1s ease, opacity 0.15s ease, filter 0.15s ease;
+        display: grid;
+        place-items: center;
+        user-select: none;
+      }
+
+      .btn:active { transform: scale(0.98); }
+      .btn-primary { background: var(--accent); color: #fff; }
+      .btn-check { background: #111827; color: #fff; }
+      .btn-ghost { background: #fff; color: #111827; }
+
+      .btn[disabled] {
+        opacity: 0.28;
+        cursor: not-allowed;
+        filter: grayscale(0.2);
+      }
+
+      /* Altavoz (solo aparece/desaparece; sin animación por nota) */
+      .speaker {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.15s ease;
+      }
+
+      .speaker.show { opacity: 1; }
+
+      .speaker .bubble {
+        width: 120px;
+        height: 120px;
+        border-radius: 32px;
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: var(--shadow);
+        display: grid;
+        place-items: center;
         backdrop-filter: blur(6px);
       }
-      .speaker svg{
-        width:66px;
-        height:66px;
-      }
+
+      .speaker svg { width: 66px; height: 66px; }
     </style>
   </head>
 
@@ -211,7 +232,6 @@
         <button class="btn btn-ghost" id="new" aria-label="Nuevo" disabled>↻</button>
       </div>
 
-      <!-- Altavoz (solo aparece mientras suena) -->
       <div class="speaker" id="speaker" aria-hidden="true">
         <div class="bubble">
           <svg viewBox="0 0 64 64" fill="none">
@@ -227,30 +247,34 @@
       // =============================
       // SOLO cambia la DURACIÓN:
       // Blanca = larga, Negra = corta
-      // Mismo timbre y misma envolvente.
+      // Timbre igual, envolvente igual.
       // =============================
 
       const NOTE_COUNT = 4;
 
-      // Duraciones claras
-      const DUR_BLACK = 0.28;
-      const DUR_WHITE = 0.62;
-      const GAP = 0.06;
+      // Duraciones (más largas que antes, y blancas > negras)
+      const DUR_BLACK = 0.42;
+      const DUR_WHITE = 0.86;
+      const GAP = 0.08;
 
       // Volumen general (subido)
-      // OJO: subir demasiado puede distorsionar en algunos altavoces.
-      const MASTER_PEAK = 0.32; // antes 0.22 aprox
+      const MASTER_PEAK = 0.42;
 
       // Marcador acumulado
       let totalCorrect = 0;
       let totalAttempts = 0;
 
-      // Melodía actual (frecuencias) y patrón (white/black)
+      // Control de puntuación: Modelo C
+      // - Solo puntúa el primer CHECK de cada melodía
+      // - Para pasar, debe conseguir 4/4 (aunque ya no puntúe)
+      let scoredThisMelody = false;
+
+      // Melodía actual
       let melodyIndex = 1;
       let currentFreqs = pickPrettyMelody();
-      let answer = generateAnswer(); // array ["white"/"black"] de 4
+      let answer = generateAnswer(); // ["white"/"black"] x4
 
-      // Selección del alumno
+      // Selección del alumno (arranca en blanco)
       const selections = Array(NOTE_COUNT).fill("white");
 
       // Elements
@@ -262,7 +286,6 @@
       const scoreText = document.getElementById("scoreText");
       const speakerEl = document.getElementById("speaker");
 
-      // Helper: actualizar score
       function updateScore() {
         scoreText.textContent = `${totalCorrect}/${totalAttempts}`;
       }
@@ -275,19 +298,18 @@
 
         buttons.forEach((button) => {
           button.addEventListener("click", () => {
-            // reset visual state of this group
-            buttons.forEach((btn) => {
-              btn.classList.remove("selected", "result-ok", "result-bad");
-            });
+            // Limpiar estados visuales del grupo
+            buttons.forEach((btn) => btn.classList.remove("selected", "result-ok", "result-bad"));
             button.classList.add("selected");
             selections[index] = button.classList.contains("white") ? "white" : "black";
-            // cuando cambian algo, deshabilitamos ↻ hasta acertar 4/4 otra vez
+
+            // Al cambiar algo, no permitimos pasar (hasta sacar 4/4)
             newBtn.disabled = true;
           });
         });
       });
 
-      // Audio context (reuse)
+      // Audio
       let ctx = null;
       function getAudioContext() {
         if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -304,7 +326,7 @@
         osc.frequency.setValueAtTime(freq, startTime);
 
         const attack = 0.02;
-        const release = 0.05;
+        const release = 0.06;
 
         gain.gain.setValueAtTime(0.001, startTime);
         gain.gain.exponentialRampToValueAtTime(MASTER_PEAK, startTime + attack);
@@ -318,7 +340,6 @@
         osc.stop(startTime + duration);
       }
 
-      // Sin pistas: solo altavoz aparece/desaparece
       function showSpeaker() { speakerEl.classList.add("show"); }
       function hideSpeaker() { speakerEl.classList.remove("show"); }
 
@@ -330,10 +351,7 @@
         return arr;
       }
 
-      // Melodías bonitas (pentatónicas / diatónicas sencillas)
-      // Devuelve 4 frecuencias distintas por sesión.
       function pickPrettyMelody() {
-        // Conjuntos agradables (en C mayor / pentatónica)
         const presets = [
           [261.63, 329.63, 392.00, 440.00], // C E G A
           [261.63, 293.66, 392.00, 440.00], // C D G A
@@ -341,6 +359,7 @@
           [261.63, 392.00, 440.00, 523.25], // C G A C5
           [220.00, 261.63, 329.63, 392.00], // A3 C E G
           [392.00, 440.00, 493.88, 523.25], // G A B C5
+          [261.63, 392.00, 329.63, 440.00], // C G E A (orden distinto)
         ];
         return presets[Math.floor(Math.random() * presets.length)];
       }
@@ -353,7 +372,8 @@
       }
 
       function playAnswerMelody() {
-        clearAllResultBorders(); // quita verdes/rojos anteriores
+        clearAllResultBorders();
+
         const context = getAudioContext();
         const start = context.currentTime + 0.03;
 
@@ -369,7 +389,6 @@
           t += dur + GAP;
         }
 
-        // esconder altavoz cuando acaba
         const totalTime = (t - start);
         setTimeout(hideSpeaker, totalTime * 1000 + 60);
       }
@@ -377,25 +396,28 @@
       function checkAnswers() {
         clearAllResultBorders();
 
-        let correct = 0;
+        let correctNow = 0;
 
         groups.forEach((group, i) => {
           const chosen = selections[i];
           const ok = chosen === answer[i];
-          if (ok) correct++;
+          if (ok) correctNow++;
 
-          // marcar SOLO el botón elegido (el que tiene "selected") en verde/rojo
           const chosenBtn = group.querySelector(chosen === "white" ? ".note.white" : ".note.black");
           chosenBtn.classList.remove("selected");
           chosenBtn.classList.add(ok ? "result-ok" : "result-bad");
         });
 
-        totalCorrect += correct;
-        totalAttempts += NOTE_COUNT;
-        updateScore();
+        // Modelo C: solo puntúa el primer CHECK de esta melodía
+        if (!scoredThisMelody) {
+          totalCorrect += correctNow;
+          totalAttempts += NOTE_COUNT;
+          scoredThisMelody = true;
+          updateScore();
+        }
 
-        // ↻ solo si 4/4
-        newBtn.disabled = (correct !== NOTE_COUNT);
+        // Para pasar: debe ser 4/4 (aunque ya no puntúe)
+        newBtn.disabled = (correctNow !== NOTE_COUNT);
       }
 
       function newMelody() {
@@ -406,12 +428,15 @@
 
         currentFreqs = pickPrettyMelody();
         answer = generateAnswer();
+        scoredThisMelody = false;
 
-        // reset visual to selections (amarillo) sin textos
+        // Reset visual (volver a selección amarilla)
         groups.forEach((group, i) => {
           const buttons = group.querySelectorAll("button.note");
           buttons.forEach((btn) => btn.classList.remove("result-ok", "result-bad", "selected"));
-          const defaultBtn = group.querySelector(selections[i] === "white" ? ".note.white" : ".note.black");
+
+          const sel = selections[i]; // lo que tenga el niño marcado
+          const defaultBtn = group.querySelector(sel === "white" ? ".note.white" : ".note.black");
           defaultBtn.classList.add("selected");
         });
 
