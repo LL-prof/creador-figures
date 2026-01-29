@@ -1,302 +1,426 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Cube Builder</title>
-  <style>
-    html, body { height: 100%; margin: 0; }
-    canvas { display: block; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ejercicio</title>
+    <style>
+      :root{
+        --bg:#f5f5f5;
+        --white:#ffffff;
+        --black:#1f1f1f;
+        --accent:#4aa3ff;
+        --shadow:0 8px 20px rgba(0,0,0,.08);
 
-    #ui{
-      position:fixed; top:12px; left:12px;
-      background:rgba(255,255,255,.92);
-      padding:12px 12px; border-radius:14px;
-      font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      font-size:14px; line-height:1.35;
-      box-shadow:0 6px 18px rgba(0,0,0,.15);
-      max-width:380px; user-select:none;
-    }
-    .hint{ opacity:.85; font-size:12px; margin-top:6px; }
-    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px; }
-
-    /* Botones grandes (SIEI-friendly) */
-    .mode-btn{
-      padding:10px 14px;
-      border-radius:14px;
-      border:2px solid #ddd;
-      background:#fff;
-      cursor:pointer;
-      font-weight:700;
-      letter-spacing:.2px;
-      min-width:110px;
-    }
-    .mode-btn.active{
-      border-color:#111;
-      box-shadow:0 2px 10px rgba(0,0,0,.12);
-    }
-
-    button, input[type="color"]{
-      padding:8px 12px; border-radius:12px;
-      border:1px solid #ddd; background:#fff; cursor:pointer;
-      font-weight:600;
-    }
-    button:hover{ background:#f6f6f6; }
-    input[type="color"]{ height:42px; width:54px; padding:0; border-radius:12px; }
-  </style>
-
-  <!-- Import map: arregla el "from 'three'" interno de OrbitControls -->
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
-    }
-  }
-  </script>
-</head>
-<body>
-  <div id="ui">
-    <div><b>Constructor de cubs</b></div>
-
-    <div class="row">
-      <button id="btnPlace" class="mode-btn active">🟦 AFEGIR</button>
-      <button id="btnErase" class="mode-btn">🧽 BORRAR</button>
-    </div>
-
-    <div class="row">
-      <label style="font-weight:700;">Color</label>
-      <input id="color" type="color" value="#4da3ff" />
-      <button id="clear">Borrar todo</button>
-    </div>
-
-    <div class="hint" id="modeHint">
-      ARA: <b>AFEGIR</b>
-    </div>
-  </div>
-
-  <script type="module">
-    import * as THREE from "three";
-    import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
-
-    // --- Escena ---
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf3f5f7);
-
-    const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 400);
-    camera.position.set(10, 12, 14);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(innerWidth, innerHeight);
-    renderer.setPixelRatio(devicePixelRatio);
-    document.body.appendChild(renderer.domElement);
-
-    // Controles
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
-    controls.screenSpacePanning = true;
-    controls.target.set(0, 0, 0);
-    controls.update();
-
-    // Luces
-    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-    const dir = new THREE.DirectionalLight(0xffffff, 0.9);
-    dir.position.set(10, 20, 10);
-    scene.add(dir);
-
-    // Grid + suelo invisible (raycast)
-    const GRID_SIZE = 20;
-    scene.add(new THREE.GridHelper(GRID_SIZE, GRID_SIZE, 0x9aa4ad, 0xd0d6dc));
-
-    const groundGeo = new THREE.PlaneGeometry(GRID_SIZE, GRID_SIZE);
-    groundGeo.rotateX(-Math.PI / 2);
-    const ground = new THREE.Mesh(
-      groundGeo,
-      new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.0 })
-    );
-    ground.name = "GROUND";
-    scene.add(ground);
-
-    // Cubos
-    const cubeGeo = new THREE.BoxGeometry(1,1,1);
-    const cubes = new Map(); // key -> mesh
-    const keyOf = (x,y,z) => `${x},${y},${z}`;
-
-    function addCube(x, y, z, colorHex){
-      const k = keyOf(x,y,z);
-      if (cubes.has(k)) return;
-
-      const mat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.7 });
-      const m = new THREE.Mesh(cubeGeo, mat);
-      m.position.set(x+0.5, y+0.5, z+0.5);
-      m.userData = { x,y,z };
-
-      // Bordes negros
-      const edges = new THREE.EdgesGeometry(cubeGeo);
-      const edgeLines = new THREE.LineSegments(
-        edges,
-        new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.75 })
-      );
-      edgeLines.renderOrder = 1;
-      m.add(edgeLines);
-
-      scene.add(m);
-      cubes.set(k, m);
-    }
-
-    function removeCube(x,y,z){
-      const k = keyOf(x,y,z);
-      const m = cubes.get(k);
-      if (!m) return;
-      scene.remove(m);
-      m.geometry.dispose();
-      m.material.dispose();
-      cubes.delete(k);
-    }
-
-    function clearAll(){
-      for (const m of cubes.values()){
-        scene.remove(m);
-        m.geometry.dispose();
-        m.material.dispose();
+        --sel:#facc15;   /* amarillo selección */
+        --ok:#22c55e;    /* verde */
+        --bad:#ef4444;   /* rojo */
+        --muted:#6b7280;
       }
-      cubes.clear();
-    }
-    document.getElementById("clear").addEventListener("click", clearAll);
+      *{box-sizing:border-box}
+      body{
+        margin:0; min-height:100vh;
+        display:grid; place-items:center;
+        padding:22px 16px;
+        background:var(--bg);
+        font-family:Arial, sans-serif;
+      }
+      .card{
+        width:min(920px,100%);
+        background:rgba(255,255,255,.72);
+        border-radius:22px;
+        padding:16px 18px 18px;
+        box-shadow:var(--shadow);
+        backdrop-filter: blur(6px);
+        position:relative;
+        overflow:hidden;
+      }
 
-    // --- Modo PONER / BORRAR ---
-    let mode = "place"; // "place" | "erase"
-    const btnPlace = document.getElementById("btnPlace");
-    const btnErase = document.getElementById("btnErase");
-    const modeHint = document.getElementById("modeHint");
+      /* Header */
+      .topbar{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        margin-bottom:10px;
+      }
+      .title{
+        font-size:20px;
+        font-weight:900;
+        letter-spacing:.2px;
+        margin:0;
+        color:#111827;
+        user-select:none;
+      }
+      .score{
+        display:flex;
+        align-items:center;
+        gap:10px;
+        padding:8px 12px;
+        border-radius:16px;
+        background:#ffffff;
+        box-shadow:var(--shadow);
+        font-weight:900;
+        color:#111827;
+        user-select:none;
+      }
+      .score small{
+        font-weight:800;
+        color:var(--muted);
+      }
 
-    function setMode(next){
-      mode = next;
-      btnPlace.classList.toggle("active", mode === "place");
-      btnErase.classList.toggle("active", mode === "erase");
-      modeHint.innerHTML = mode === "place"
-        ? 'ARA: <b>AFEGIR</b>'
-        : 'ARA: <b>BORRAR</b>';
-    }
+      /* Choices */
+      .choices{
+        display:grid;
+        grid-template-columns:repeat(4, minmax(70px,90px));
+        gap:16px 20px;
+        justify-content:center;
+        margin-top:8px;
+      }
+      .note-group{
+        display:grid;
+        gap:10px;
+        align-items:center;
+        justify-items:center;
+        padding:8px 6px;
+        border-radius:16px;
+      }
+      button.note{
+        border:3px solid transparent;
+        cursor:pointer;
+        width:82px; height:62px;
+        border-radius:18px;
+        box-shadow:var(--shadow);
+        transition:transform .15s ease, box-shadow .15s ease, border-color .12s ease, filter .12s ease;
+      }
+      button.note:focus-visible{
+        outline:3px solid var(--accent);
+        outline-offset:4px;
+      }
+      .white{background:var(--white)}
+      .black{background:var(--black)}
+      .selected{
+        border-color:var(--sel);
+        box-shadow:0 10px 24px rgba(0,0,0,.12), 0 0 0 5px rgba(250,204,21,.25);
+        transform:translateY(-2px);
+      }
 
-    btnPlace.addEventListener("click", () => setMode("place"));
-    btnErase.addEventListener("click", () => setMode("erase"));
+      /* Result borders after CHECK */
+      .result-ok{
+        border-color:var(--ok) !important;
+        box-shadow:0 10px 24px rgba(0,0,0,.12), 0 0 0 5px rgba(34,197,94,.22) !important;
+      }
+      .result-bad{
+        border-color:var(--bad) !important;
+        box-shadow:0 10px 24px rgba(0,0,0,.12), 0 0 0 5px rgba(239,68,68,.22) !important;
+      }
 
-    // Raycaster
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
+      /* Controls */
+      .controls{
+        display:flex;
+        gap:12px;
+        justify-content:center;
+        align-items:center;
+        margin-top:16px;
+      }
+      .btn{
+        border:none;
+        cursor:pointer;
+        width:90px;
+        height:70px;
+        border-radius:22px;
+        box-shadow:var(--shadow);
+        font-size:30px;
+        font-weight:900;
+        transition:transform .1s ease, opacity .15s ease, filter .15s ease;
+        display:grid;
+        place-items:center;
+        user-select:none;
+      }
+      .btn:active{transform:scale(.98)}
+      .btn-primary{background:var(--accent); color:#fff;}
+      .btn-check{background:#111827; color:#fff;}
+      .btn-ghost{background:#fff; color:#111827;}
 
-    function withinGrid(x,z){
-      const half = GRID_SIZE/2;
-      return (x >= -half && x < half && z >= -half && z < half);
-    }
+      .btn[disabled]{
+        opacity:.28;
+        cursor:not-allowed;
+        filter:grayscale(.2);
+      }
 
-    // --- Evitar cubo fantasma al mover cámara ---
-    let downX = 0, downY = 0;
-    let moved = false;
-    let activeButton = -1;
-    const MOVE_TOLERANCE = 6; // px
+      /* Speaker overlay (solo aparece/desaparece) */
+      .speaker{
+        position:absolute;
+        inset:0;
+        display:grid;
+        place-items:center;
+        pointer-events:none;
+        opacity:0;
+        transition:opacity .15s ease;
+      }
+      .speaker.show{ opacity:1; }
+      .speaker .bubble{
+        width:120px;
+        height:120px;
+        border-radius:32px;
+        background:rgba(255,255,255,.85);
+        box-shadow:var(--shadow);
+        display:grid;
+        place-items:center;
+        backdrop-filter: blur(6px);
+      }
+      .speaker svg{
+        width:66px;
+        height:66px;
+      }
+    </style>
+  </head>
 
-    renderer.domElement.addEventListener("pointerdown", (ev) => {
-      // si clicas en la UI, no construyas
-      if (ev.target && ev.target.closest && ev.target.closest("#ui")) return;
+  <body>
+    <div class="card" aria-label="Ejercicio">
+      <div class="topbar">
+        <h1 class="title" id="title">Melodía 1</h1>
+        <div class="score" aria-label="Marcador">
+          <small>✓</small>
+          <span id="scoreText">0/0</span>
+        </div>
+      </div>
 
-      activeButton = ev.button; // 0 izq / 2 der
-      downX = ev.clientX;
-      downY = ev.clientY;
-      moved = false;
-    });
+      <div class="choices" aria-label="Elegir blanco o negro">
+        <div class="note-group" data-index="0">
+          <button class="note white selected" aria-label="1 blanco"></button>
+          <button class="note black" aria-label="1 negro"></button>
+        </div>
+        <div class="note-group" data-index="1">
+          <button class="note white selected" aria-label="2 blanco"></button>
+          <button class="note black" aria-label="2 negro"></button>
+        </div>
+        <div class="note-group" data-index="2">
+          <button class="note white selected" aria-label="3 blanco"></button>
+          <button class="note black" aria-label="3 negro"></button>
+        </div>
+        <div class="note-group" data-index="3">
+          <button class="note white selected" aria-label="4 blanco"></button>
+          <button class="note black" aria-label="4 negro"></button>
+        </div>
+      </div>
 
-    renderer.domElement.addEventListener("pointermove", (ev) => {
-      if (activeButton === -1) return;
-      const dx = Math.abs(ev.clientX - downX);
-      const dy = Math.abs(ev.clientY - downY);
-      if (dx > MOVE_TOLERANCE || dy > MOVE_TOLERANCE) moved = true;
-    });
+      <div class="controls" aria-label="Controles">
+        <button class="btn btn-primary" id="listen" aria-label="Escuchar">▶</button>
+        <button class="btn btn-check" id="check" aria-label="Comprobar">✓</button>
+        <button class="btn btn-ghost" id="new" aria-label="Nuevo" disabled>↻</button>
+      </div>
 
-    renderer.domElement.addEventListener("pointerup", (ev) => {
-      // Solo botón izquierdo para acciones
-      if (activeButton !== 0) { activeButton = -1; return; }
+      <!-- Altavoz (solo aparece mientras suena) -->
+      <div class="speaker" id="speaker" aria-hidden="true">
+        <div class="bubble">
+          <svg viewBox="0 0 64 64" fill="none">
+            <path d="M28 22L18 30H10v4h8l10 8V22z" fill="#111827"/>
+            <path d="M40 24c3 3 3 13 0 16" stroke="#4aa3ff" stroke-width="4" stroke-linecap="round"/>
+            <path d="M48 18c6 6 6 22 0 28" stroke="#4aa3ff" stroke-width="4" stroke-linecap="round" opacity=".75"/>
+          </svg>
+        </div>
+      </div>
+    </div>
 
-      // Si fue arrastre, era cámara → no acción
-      if (moved) { activeButton = -1; return; }
+    <script>
+      // =============================
+      // SOLO cambia la DURACIÓN:
+      // Blanca = larga, Negra = corta
+      // Mismo timbre y misma envolvente.
+      // =============================
 
-      // Click limpio
-      mouse.x = (ev.clientX / innerWidth) * 2 - 1;
-      mouse.y = -(ev.clientY / innerHeight) * 2 + 1;
-      raycaster.setFromCamera(mouse, camera);
+      const NOTE_COUNT = 4;
 
-      const hits = raycaster.intersectObjects([ground, ...cubes.values()], false);
-      if (!hits.length) { activeButton = -1; return; }
+      // Duraciones claras
+      const DUR_BLACK = 0.28;
+      const DUR_WHITE = 0.62;
+      const GAP = 0.06;
 
-      const hit = hits[0];
+      // Volumen general (subido)
+      // OJO: subir demasiado puede distorsionar en algunos altavoces.
+      const MASTER_PEAK = 0.32; // antes 0.22 aprox
 
-      // --- MODO BORRAR ---
-      if (mode === "erase") {
-        if (hit.object !== ground) {
-          const { x, y, z } = hit.object.userData;
-          removeCube(x, y, z);
+      // Marcador acumulado
+      let totalCorrect = 0;
+      let totalAttempts = 0;
+
+      // Melodía actual (frecuencias) y patrón (white/black)
+      let melodyIndex = 1;
+      let currentFreqs = pickPrettyMelody();
+      let answer = generateAnswer(); // array ["white"/"black"] de 4
+
+      // Selección del alumno
+      const selections = Array(NOTE_COUNT).fill("white");
+
+      // Elements
+      const groups = document.querySelectorAll(".note-group");
+      const listenBtn = document.getElementById("listen");
+      const checkBtn = document.getElementById("check");
+      const newBtn = document.getElementById("new");
+      const titleEl = document.getElementById("title");
+      const scoreText = document.getElementById("scoreText");
+      const speakerEl = document.getElementById("speaker");
+
+      // Helper: actualizar score
+      function updateScore() {
+        scoreText.textContent = `${totalCorrect}/${totalAttempts}`;
+      }
+      updateScore();
+
+      // UI selection
+      groups.forEach((group) => {
+        const index = Number(group.dataset.index);
+        const buttons = group.querySelectorAll("button.note");
+
+        buttons.forEach((button) => {
+          button.addEventListener("click", () => {
+            // reset visual state of this group
+            buttons.forEach((btn) => {
+              btn.classList.remove("selected", "result-ok", "result-bad");
+            });
+            button.classList.add("selected");
+            selections[index] = button.classList.contains("white") ? "white" : "black";
+            // cuando cambian algo, deshabilitamos ↻ hasta acertar 4/4 otra vez
+            newBtn.disabled = true;
+          });
+        });
+      });
+
+      // Audio context (reuse)
+      let ctx = null;
+      function getAudioContext() {
+        if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === "suspended") ctx.resume();
+        return ctx;
+      }
+
+      function playTone(freq, startTime, duration) {
+        const context = getAudioContext();
+        const osc = context.createOscillator();
+        const gain = context.createGain();
+
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        const attack = 0.02;
+        const release = 0.05;
+
+        gain.gain.setValueAtTime(0.001, startTime);
+        gain.gain.exponentialRampToValueAtTime(MASTER_PEAK, startTime + attack);
+        gain.gain.exponentialRampToValueAtTime(
+          0.001,
+          startTime + Math.max(attack + 0.02, duration - release)
+        );
+
+        osc.connect(gain).connect(context.destination);
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      }
+
+      // Sin pistas: solo altavoz aparece/desaparece
+      function showSpeaker() { speakerEl.classList.add("show"); }
+      function hideSpeaker() { speakerEl.classList.remove("show"); }
+
+      function generateAnswer() {
+        let arr;
+        do {
+          arr = Array.from({ length: NOTE_COUNT }, () => (Math.random() < 0.5 ? "white" : "black"));
+        } while (arr.every((x) => x === "white") || arr.every((x) => x === "black"));
+        return arr;
+      }
+
+      // Melodías bonitas (pentatónicas / diatónicas sencillas)
+      // Devuelve 4 frecuencias distintas por sesión.
+      function pickPrettyMelody() {
+        // Conjuntos agradables (en C mayor / pentatónica)
+        const presets = [
+          [261.63, 329.63, 392.00, 440.00], // C E G A
+          [261.63, 293.66, 392.00, 440.00], // C D G A
+          [293.66, 329.63, 392.00, 493.88], // D E G B
+          [261.63, 392.00, 440.00, 523.25], // C G A C5
+          [220.00, 261.63, 329.63, 392.00], // A3 C E G
+          [392.00, 440.00, 493.88, 523.25], // G A B C5
+        ];
+        return presets[Math.floor(Math.random() * presets.length)];
+      }
+
+      function clearAllResultBorders() {
+        groups.forEach((group) => {
+          const buttons = group.querySelectorAll("button.note");
+          buttons.forEach((btn) => btn.classList.remove("result-ok", "result-bad"));
+        });
+      }
+
+      function playAnswerMelody() {
+        clearAllResultBorders(); // quita verdes/rojos anteriores
+        const context = getAudioContext();
+        const start = context.currentTime + 0.03;
+
+        showSpeaker();
+
+        let t = start;
+        for (let i = 0; i < NOTE_COUNT; i++) {
+          const kind = answer[i];
+          const dur = kind === "white" ? DUR_WHITE : DUR_BLACK;
+          const freq = currentFreqs[i];
+
+          playTone(freq, t, dur);
+          t += dur + GAP;
         }
-        activeButton = -1;
-        return;
+
+        // esconder altavoz cuando acaba
+        const totalTime = (t - start);
+        setTimeout(hideSpeaker, totalTime * 1000 + 60);
       }
 
-      // --- MODO PONER ---
-      const colorHex = parseInt(document.getElementById("color").value.replace("#","0x"));
+      function checkAnswers() {
+        clearAllResultBorders();
 
-      // Click en suelo: cubo en y=0
-      if (hit.object === ground) {
-        const p = hit.point;
-        const x = Math.floor(p.x);
-        const z = Math.floor(p.z);
-        if (!withinGrid(x, z)) { activeButton = -1; return; }
-        addCube(x, 0, z, colorHex);
-        activeButton = -1;
-        return;
+        let correct = 0;
+
+        groups.forEach((group, i) => {
+          const chosen = selections[i];
+          const ok = chosen === answer[i];
+          if (ok) correct++;
+
+          // marcar SOLO el botón elegido (el que tiene "selected") en verde/rojo
+          const chosenBtn = group.querySelector(chosen === "white" ? ".note.white" : ".note.black");
+          chosenBtn.classList.remove("selected");
+          chosenBtn.classList.add(ok ? "result-ok" : "result-bad");
+        });
+
+        totalCorrect += correct;
+        totalAttempts += NOTE_COUNT;
+        updateScore();
+
+        // ↻ solo si 4/4
+        newBtn.disabled = (correct !== NOTE_COUNT);
       }
 
-      // Click en cara del cubo: añade pegado a esa cara
-      const obj = hit.object;
-      const { x, y, z } = obj.userData;
+      function newMelody() {
+        if (newBtn.disabled) return;
 
-      const n = hit.face.normal.clone().applyQuaternion(obj.quaternion);
-      const step = new THREE.Vector3(Math.round(n.x), Math.round(n.y), Math.round(n.z));
+        melodyIndex++;
+        titleEl.textContent = `Melodía ${melodyIndex}`;
 
-      const nx = x + step.x;
-      const ny = y + step.y;
-      const nz = z + step.z;
+        currentFreqs = pickPrettyMelody();
+        answer = generateAnswer();
 
-      if (ny < 0 || ny > 40) { activeButton = -1; return; }
-      if (!withinGrid(nx, nz)) { activeButton = -1; return; }
+        // reset visual to selections (amarillo) sin textos
+        groups.forEach((group, i) => {
+          const buttons = group.querySelectorAll("button.note");
+          buttons.forEach((btn) => btn.classList.remove("result-ok", "result-bad", "selected"));
+          const defaultBtn = group.querySelector(selections[i] === "white" ? ".note.white" : ".note.black");
+          defaultBtn.classList.add("selected");
+        });
 
-      addCube(nx, ny, nz, colorHex);
-      activeButton = -1;
-    });
+        newBtn.disabled = true;
+      }
 
-    // si sueltas el botón fuera del canvas
-    window.addEventListener("pointerup", () => { activeButton = -1; });
-
-    // Render loop
-    function animate(){
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    addEventListener("resize", () => {
-      camera.aspect = innerWidth / innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(innerWidth, innerHeight);
-    });
-
-    // Cubo inicial
-    addCube(0,0,0, 0x4da3ff);
-  </script>
-</body>
+      listenBtn.addEventListener("click", playAnswerMelody);
+      checkBtn.addEventListener("click", checkAnswers);
+      newBtn.addEventListener("click", newMelody);
+    </script>
+  </body>
 </html>
- 
-
-
-
-
