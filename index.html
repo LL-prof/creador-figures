@@ -68,11 +68,7 @@
       <input id="color" type="color" value="#4da3ff" />
       <button id="clear">Borrar todo</button>
     </div>
-
-    <div class="hint" id="modeHint">
-      ARA: <b>PONER</b>
-      ARA: <b>AFEGIR</b>
-    </div>
+    
   </div>
 
   <script type="module">
@@ -171,17 +167,7 @@
     const btnErase = document.getElementById("btnErase");
     const modeHint = document.getElementById("modeHint");
 
-    function setMode(next){
-      mode = next;
-      btnPlace.classList.toggle("active", mode === "place");
-      btnErase.classList.toggle("active", mode === "erase");
-      modeHint.innerHTML = mode === "place"
-        ? 'ARA: <b>AFEGIR</b>'
-        : 'ARA: <b>BORRAR</b>';
-    }
-
-    btnPlace.addEventListener("click", () => setMode("place"));
-    btnErase.addEventListener("click", () => setMode("erase"));
+    
 
     // Raycaster
     const raycaster = new THREE.Raycaster();
@@ -296,4 +282,5 @@
   </script>
 </body>
 </html>
+
 
