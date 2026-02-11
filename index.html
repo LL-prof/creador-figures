@@ -167,7 +167,17 @@
     const btnErase = document.getElementById("btnErase");
     const modeHint = document.getElementById("modeHint");
 
-    
+    function setMode(next){
+      mode = next;
+      btnPlace.classList.toggle("active", mode === "place");
+      btnErase.classList.toggle("active", mode === "erase");
+      modeHint.innerHTML = mode === "place"
+        ? 'ARA: <b>AFEGIR</b>'
+        : 'ARA: <b>BORRAR</b>';
+    }
+
+    btnPlace.addEventListener("click", () => setMode("place"));
+    btnErase.addEventListener("click", () => setMode("erase"));
 
     // Raycaster
     const raycaster = new THREE.Raycaster();
@@ -282,5 +292,6 @@
   </script>
 </body>
 </html>
+
 
 
